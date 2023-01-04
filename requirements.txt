@@ -1,2 +1,4 @@
 pymodbus>=3.0.0
 pycryptodomex>=3.11.0
+influxdb-client>=1.35.0
+python-dotenv>=0.21.0
