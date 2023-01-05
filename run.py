@@ -38,7 +38,7 @@ while True:
     publisher.publish(client.data)
 
   else:
-    logging.warn("Error fetching data from inverter - trying again soon")
+    logging.warning("Error fetching data from inverter - trying again soon")
 
   # Sleep until the next scan
   time.sleep(config.scan_interval_seconds)
