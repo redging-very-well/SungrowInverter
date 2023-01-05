@@ -6,6 +6,6 @@ RUN pip install --upgrade -r requirements.txt
 
 COPY influx influx
 COPY sungrowinverter sungrowinverter
-COPY *.py .
+COPY *.py ./
 
 CMD ["python", "run.py"]
