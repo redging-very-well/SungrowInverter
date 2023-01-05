@@ -25,14 +25,20 @@ publisher = InfluxDBPublisher(config)
 while True:
   # Scrape the inverter
   result = loop.run_until_complete(client.async_update())
-  if not result:
-    logging.error("Error fetching data from inverter")
-    exit(1)
+  if result:
 
-  # Get a list of data returned from the inverter.
-  logging.debug(client.data)
+    client.data['import_power'] = 0
+    if client.data['export_power'] < 0:
+      client.data['import_power'] = abs(client.data['export_power'])
+      client.data['export_power'] = 0
 
-  publisher.publish(client.data)
+    # Get a list of data returned from the inverter.
+    logging.debug(client.data)
+
+    publisher.publish(client.data)
+
+  else:
+    logging.warn("Error fetching data from inverter - trying again soon")
 
   # Sleep until the next scan
   time.sleep(config.scan_interval_seconds)
