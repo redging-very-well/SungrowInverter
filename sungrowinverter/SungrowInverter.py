@@ -79,6 +79,7 @@ class SungrowInverter:
     async def _load_registers(self, register_type, start, modbus_registers, count=100):
         try:
             if register_type == "read":
+                logging.info("reading input registers")
                 response = self._modbusclient.read_input_registers(int(start), count=count, slave=self._slave)
             elif register_type == "holding":
                 response = self._modbusclient.read_holding_registers(int(start), count=count, slave=self._slave)
@@ -168,7 +169,7 @@ class SungrowInverter:
 
                         else:
                             self.data[current_register.key] = value
-                    
+
                     except Exception as err:
                         exp = err
 
@@ -228,7 +229,7 @@ class SungrowInverter:
 
                         # see if the inverter supports a battery if so grab that data also
                         if inverter_model.inverter_type == "hybrid":
-                            
+
                             connection = self._modbusclient.connect()
                             if connection:
 
@@ -247,13 +248,13 @@ class SungrowInverter:
                                 logging.info("Storage device attached to inverter: [Model: %s, Capacity: %s kWh]", self.battery_type, self.battery_energy_capacity)
 
                         return inverter_model
-                                       
+
                     else:
                         logging.error("UPSUPPORT INVERTER: Supported inverter device_type_code [%s] is not supported", self.data["device_type_code"])
                 else:
                     logging.error("DEVICE CODE NOT FOUND: A device code could not be obtained from the inverter")
             else:
-                logging.error("CONNECTION ERROR: Could not connect to inverter @ Host: %s, Port: %s", self._modbusclient.host, self._modbusclient.port)                                        
+                logging.error("CONNECTION ERROR: Could not connect to inverter @ Host: %s, Port: %s", self._modbusclient.host, self._modbusclient.port)
         else:
             return SungrowInverterModel(self.device_code, self.model, self.inverter_type, self.mppt_inputs, self.nominal_output_power, self.serial_number)
 
@@ -267,7 +268,7 @@ class SungrowInverter:
             await self.inverter_model()
 
         if self.model is not None:
-            
+
             calculation_registers = None
 
             if self.inverter_type == "hybrid":
@@ -280,7 +281,7 @@ class SungrowInverter:
                 inverter_scan = STRING_SCAN
                 read_registers = STRING_READ_REGISTERS
                 holding_registers = STRING_HOLDING_REGISTERS
-                
+
             else:
                 logging.error("UNSUPPORTED INVERTER: Inverter type is not supported")
                 return False
@@ -304,7 +305,7 @@ class SungrowInverter:
                             self.data[register_calc.key] = eval(register_calc.calculation)
                         finally:
                             self.data[register_calc.key] = 0
-                            
+
                 try:
                     self.data["timestamp"] = '%s/%s/%s %02d:%02d:%02d' % (
                         self.data["year"], self.data["month"], self.data["day"],
