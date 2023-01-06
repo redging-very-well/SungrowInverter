@@ -34,6 +34,8 @@ from sungrowinverter.configs.string import (
 )
 
 import logging
+import inspect
+
 
 REQUESTS_TIMEOUT = 60
 
@@ -79,7 +81,6 @@ class SungrowInverter:
     async def _load_registers(self, register_type, start, modbus_registers, count=100):
         try:
             if register_type == "read":
-                logging.info("reading input registers")
                 response = self._modbusclient.read_input_registers(int(start), count=count, slave=self._slave)
             elif register_type == "holding":
                 response = self._modbusclient.read_holding_registers(int(start), count=count, slave=self._slave)
@@ -92,6 +93,11 @@ class SungrowInverter:
 
         if response.isError():
             logging.warning("Modbus connection failed, connection could not be made or register range failed to be read.")
+
+            for i in inspect.getmembers(response):
+                if not i[0].startswith('_'):        # Ignores any private and protected attributes
+                    if not inspect.ismethod(i[1]):  # Ignores methods
+                        logging.warning(i)
             return False
 
         if not hasattr(response, "registers"):
@@ -194,6 +200,8 @@ class SungrowInverter:
         # if first time run then get the model details and load the relevant modmap for the model for future requests
         # if we fail to connect then do nothing and exit
         if self.model is None:
+
+            logging.info("reading inverter model")
 
             connection = self._modbusclient.connect()
 
