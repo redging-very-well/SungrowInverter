@@ -34,7 +34,6 @@ from sungrowinverter.configs.string import (
 )
 
 import logging
-import inspect
 
 
 REQUESTS_TIMEOUT = 60
@@ -93,11 +92,7 @@ class SungrowInverter:
 
         if response.isError():
             logging.warning("Modbus connection failed, connection could not be made or register range failed to be read.")
-
-            for i in inspect.getmembers(response):
-                if not i[0].startswith('_'):        # Ignores any private and protected attributes
-                    if not inspect.ismethod(i[1]):  # Ignores methods
-                        logging.warning(i)
+            logging.warning(f"Modbus error: {response.message}")
             return False
 
         if not hasattr(response, "registers"):

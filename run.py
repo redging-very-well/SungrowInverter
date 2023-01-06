@@ -39,6 +39,7 @@ while True:
 
   else:
     logging.warning("Error fetching data from inverter - trying again soon")
+    client = SungrowInverter(config.inverter_ip)
 
   # Sleep until the next scan
   time.sleep(config.scan_interval_seconds)
