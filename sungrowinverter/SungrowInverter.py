@@ -78,30 +78,39 @@ class SungrowInverter:
         logging.debug("Sungrow modbus TCP client - [IP:%s Port:%s]", ip_address, port)
 
     async def _load_registers(self, register_type, start, modbus_registers, count=100):
-        try:
-            if register_type == "read":
-                response = self._modbusclient.read_input_registers(int(start), count=count, slave=self._slave)
-            elif register_type == "holding":
-                response = self._modbusclient.read_holding_registers(int(start), count=count, slave=self._slave)
-            else:
-                logging.error("Unsupported register type: %s", register_type)
 
-        except Exception as err:
-            logging.warning("No data. Try increasing the timeout or scan interval: %s", err, exc_info=1)
-            return False
+        response = None
+        retryCount = 0
+        while (retryCount < 2):
+            logging.info(f"loading registers - retryCount = {retryCount}")
+            retryCount += 1
+            try:
+                if register_type == "read":
+                    response = self._modbusclient.read_input_registers(int(start), count=count, slave=self._slave)
+                elif register_type == "holding":
+                    response = self._modbusclient.read_holding_registers(int(start), count=count, slave=self._slave)
+                else:
+                    logging.error("Unsupported register type: %s", register_type)
 
-        if response.isError():
-            logging.warning("Modbus connection failed, connection could not be made or register range failed to be read.")
-            logging.warning(f"Modbus error: {response.message}")
-            return False
+            except Exception as err:
+                logging.warning("No data. Try increasing the timeout or scan interval: %s", err, exc_info=1)
+                continue
 
-        if not hasattr(response, "registers"):
-            logging.warning("No registers returned")
-            return
+            if response.isError():
+                logging.warning("Modbus connection failed, connection could not be made or register range failed to be read.")
+                logging.warning(f"Modbus error: {response.message}")
+                continue
 
-        if len(response.registers) != count:
-            logging.warning("Mismatched number of registers read %s != %s", len(response.registers), count)
-            return
+            if not hasattr(response, "registers"):
+                logging.warning("No registers returned")
+                continue
+
+            if len(response.registers) != count:
+                logging.warning("Mismatched number of registers read %s != %s", len(response.registers), count)
+                continue
+
+            # If we've not had any failures, then exit the retry loop and continue
+            break
 
         logging.debug("Registers: %s [start_register: %s, register_count: %s] contents: %s", register_type, int(start) + 1, count, response.registers)
 
@@ -230,6 +239,8 @@ class SungrowInverter:
                             inverter_model.serial_number,
                         )
 
+                        logging.info(self.data)
+
                         # see if the inverter supports a battery if so grab that data also
                         if inverter_model.inverter_type == "hybrid":
 
@@ -293,13 +304,17 @@ class SungrowInverter:
 
             if connected:
                 for scan_type, scan_settings in inverter_scan.items():
+                    logging.info(f"scan type: {scan_type}")
                     for scan in scan_settings:
+                        logging.info(f"scanning for: {scan}")
                         if not await self._load_registers(scan_type,
                                                           scan["scan_start"],
                                                           read_registers if scan_type == "read" else holding_registers,
                                                           int(scan["scan_range"])):
+                            logging.warning("self._load_registers returned false")
                             return False
 
+                logging.info("completed scan loop")
                 self._modbusclient.close()
 
                 if calculation_registers is not None:
