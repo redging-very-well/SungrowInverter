@@ -44,7 +44,7 @@ class SungrowInverter:
     SungrowInverter module for read modbus data from tcp connect to Sungrow inverters (hybrid / string) inverters supported
     """
 
-    def __init__(self, ip_address, port=502, slave=1, retries=3, timeout=REQUESTS_TIMEOUT):
+    def __init__(self, ip_address, port=502, slave=1, retries=5, timeout=REQUESTS_TIMEOUT):
         """Initialize a Sungrow Inverter TCP Modbus Client object"""
         self.manufacturer = "Sungrow"
 
@@ -82,7 +82,7 @@ class SungrowInverter:
         response = None
         retryCount = 0
         success = False
-        while (retryCount < 2 or success == True):
+        while (retryCount < 2 and success == False):
             logging.info(f"loading registers - retryCount = {retryCount}")
             retryCount += 1
             try:
