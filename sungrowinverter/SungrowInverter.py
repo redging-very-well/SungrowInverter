@@ -81,7 +81,8 @@ class SungrowInverter:
 
         response = None
         retryCount = 0
-        while (retryCount < 2):
+        success = False
+        while (retryCount < 2 or success == True):
             logging.info(f"loading registers - retryCount = {retryCount}")
             retryCount += 1
             try:
@@ -110,7 +111,10 @@ class SungrowInverter:
                 continue
 
             # If we've not had any failures, then exit the retry loop and continue
-            break
+            success = True
+
+        if not success:
+            return False
 
         logging.debug("Registers: %s [start_register: %s, register_count: %s] contents: %s", register_type, int(start) + 1, count, response.registers)
 
