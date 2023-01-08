@@ -217,6 +217,7 @@ class SungrowInverter:
                 # load the inverter registers to get static data, and determine if model found is supported.
                 for scan_type in INVERTER_SCAN["read"]:
                     if not await self._load_registers("read", scan_type["scan_start"], INVERTER_READ_REGISTERS, scan_type["scan_range"]):
+                        self._modbusclient.close()
                         return False
 
                 self._modbusclient.close()
@@ -254,6 +255,7 @@ class SungrowInverter:
                                 # load the inverter registers to get static data, and determine if model found is supported.
                                 for scan_type in INVERTER_SCAN["holding"]:
                                     if not await self._load_registers("holding", scan_type["scan_start"], INVERTER_HOLDING_REGISTERS, scan_type["scan_range"]):
+                                        self._modbusclient.close()
                                         return False
 
                                 self._modbusclient.close()
@@ -316,6 +318,7 @@ class SungrowInverter:
                                                           read_registers if scan_type == "read" else holding_registers,
                                                           int(scan["scan_range"])):
                             logging.warning("self._load_registers returned false")
+                            self._modbusclient.close()
                             return False
 
                 logging.info("completed scan loop")
