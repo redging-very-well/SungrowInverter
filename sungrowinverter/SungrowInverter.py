@@ -82,8 +82,9 @@ class SungrowInverter:
         response = None
         retryCount = 0
         success = False
+        aggregatedErrors = ""
         while (retryCount < 5 and success == False):
-            logging.info(f"loading registers - retryCount = {retryCount}")
+            logging.debug(f"loading registers - retryCount = {retryCount}")
             time.sleep(retryCount)
             retryCount += 1
             try:
@@ -99,8 +100,9 @@ class SungrowInverter:
                 continue
 
             if response.isError():
-                logging.warning("Modbus connection failed, connection could not be made or register range failed to be read.")
-                logging.warning(f"Modbus error: {response.message}")
+                logging.debug("Modbus connection failed, connection could not be made or register range failed to be read.")
+                logging.debug(f"Modbus error: {response.message}")
+                aggregatedErrors += f"Modbus connection failed: {response.message}\n"
                 continue
 
             if not hasattr(response, "registers"):
@@ -112,10 +114,12 @@ class SungrowInverter:
                 continue
 
             # If we've not had any failures, then exit the retry loop and continue
-            logging.info("Successfully retrieved modbus data")
+            logging.debug("Successfully retrieved modbus data")
             success = True
 
         if not success:
+            logging.error(f"Failed to retrieve modbus data after {retryCount} attempts")
+            logging.error(f"Aggregated errors:\n {aggregatedErrors}")
             return False
 
         logging.debug("Registers: %s [start_register: %s, register_count: %s] contents: %s", register_type, int(start) + 1, count, response.registers)
