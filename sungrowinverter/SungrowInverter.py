@@ -34,7 +34,7 @@ from sungrowinverter.configs.string import (
 )
 
 import logging
-
+import time
 
 REQUESTS_TIMEOUT = 60
 
@@ -44,7 +44,7 @@ class SungrowInverter:
     SungrowInverter module for read modbus data from tcp connect to Sungrow inverters (hybrid / string) inverters supported
     """
 
-    def __init__(self, ip_address, port=502, slave=1, retries=5, timeout=REQUESTS_TIMEOUT):
+    def __init__(self, ip_address, port=502, slave=1, retries=1, timeout=REQUESTS_TIMEOUT):
         """Initialize a Sungrow Inverter TCP Modbus Client object"""
         self.manufacturer = "Sungrow"
 
@@ -82,8 +82,9 @@ class SungrowInverter:
         response = None
         retryCount = 0
         success = False
-        while (retryCount < 2 and success == False):
+        while (retryCount < 5 and success == False):
             logging.info(f"loading registers - retryCount = {retryCount}")
+            time.sleep(retryCount)
             retryCount += 1
             try:
                 if register_type == "read":
@@ -111,6 +112,7 @@ class SungrowInverter:
                 continue
 
             # If we've not had any failures, then exit the retry loop and continue
+            logging.info("Successfully retrieved modbus data")
             success = True
 
         if not success:
@@ -310,14 +312,14 @@ class SungrowInverter:
 
             if connected:
                 for scan_type, scan_settings in inverter_scan.items():
-                    logging.info(f"scan type: {scan_type}")
+                    logging.debug(f"scan type: {scan_type}")
                     for scan in scan_settings:
-                        logging.info(f"scanning for: {scan}")
+                        logging.debug(f"scanning for: {scan}")
                         if not await self._load_registers(scan_type,
                                                           scan["scan_start"],
                                                           read_registers if scan_type == "read" else holding_registers,
                                                           int(scan["scan_range"])):
-                            logging.warning("self._load_registers returned false")
+                            logging.debug("self._load_registers returned false")
                             self._modbusclient.close()
                             return False
 
@@ -345,29 +347,3 @@ class SungrowInverter:
 
         return False
 
-
-    # Core monitoring loop
-    async def async_scan(self, register_type, start_register, register_count, step_by = 20):
-        """Connect to the inverter and scan for register locations"""
-
-        connected = self._modbusclient.connect()
-
-        if connected:
-            for start in range(start_register, start_register + register_count, step_by):
-                try:
-                    if register_type == "read":
-                        response = self._modbusclient.read_input_registers(int(start - 1), count=step_by, unit=self._slave)
-                    elif register_type == "holding":
-                        response = self._modbusclient.read_holding_registers(int(start - 1), count=step_by, unit=self._slave)
-
-                    if hasattr(response, 'registers'):
-                        logging.info("[start_register: %s, register_count: %s] contents: %s", int(start_register) , register_count, response.registers)
-                    else:
-                        logging.info("[start_register: %s, register_count: %s] nothing returned", int(start_register) , register_count)
-
-                except Exception:
-                    logging.info("Exception thrown")
-
-            self._modbusclient.close()
-            return True
-        return False
