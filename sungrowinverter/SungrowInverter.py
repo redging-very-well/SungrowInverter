@@ -85,7 +85,7 @@ class SungrowInverter:
         aggregatedErrors = ""
         while (retryCount < 5 and success == False):
             logging.debug(f"loading registers - retryCount = {retryCount}")
-            time.sleep(retryCount)
+            time.sleep(0.25 if retryCount > 0 else 0)
             retryCount += 1
             try:
                 if register_type == "read":
