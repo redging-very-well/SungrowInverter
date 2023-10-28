@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 from sungrowinverter import SungrowInverter
 from importlib import import_module
 from influx import InfluxDBPublisher
+from mqtt import MQTTPublisher
 import asyncio
 import logging
 import time
@@ -20,7 +21,8 @@ except ModuleNotFoundError:
 loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 client = SungrowInverter(config.inverter_ip)
-publisher = InfluxDBPublisher(config)
+influxPublisher = InfluxDBPublisher(config)
+mqttPublisher = MQTTPublisher(config)
 
 while True:
   # Scrape the inverter
@@ -35,7 +37,8 @@ while True:
     # Get a list of data returned from the inverter.
     logging.debug(client.data)
 
-    publisher.publish(client.data)
+    influxPublisher.publish(client.data)
+    mqttPublisher.publish(client.data)
 
   else:
     logging.warning("Error fetching data from inverter - trying again soon")
